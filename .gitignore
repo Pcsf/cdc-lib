@@ -1,0 +1,5 @@
+# simulation work directories
+build/
+*.cf
+*.o
+work-obj*.cf
