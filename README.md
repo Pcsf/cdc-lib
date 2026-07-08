@@ -146,6 +146,18 @@ Quartus (SDC) equivalent: `set_clock_groups -asynchronous ...` or
 Self-checking testbench covering all components with two unrelated clocks:
 
 ```sh
+git submodule update --init   # once, after cloning
+make            # scan (first run), analyze, elaborate, simulate; VCD in build/
+```
+
+The build system is the [makefile_project_template](https://github.com/Pcsf/makefile_project_template)
+submodule (checked out at `mk/`), driven by the one-line root `Makefile` and
+configured in `project.mk` (`TOOLCHAIN := ghdl`, `GHDL_TOP := tb_cdc_lib`).
+Compilation order lives in `src/.compile_order` and `tb/.compile_order`;
+`make help` lists all targets. Update the build system with
+`git -C mk pull`. Or run GHDL manually:
+
+```sh
 mkdir -p build
 ghdl -a --std=93 --workdir=build src/*.vhd tb/tb_cdc_lib.vhd
 ghdl -e --std=93 --workdir=build tb_cdc_lib
