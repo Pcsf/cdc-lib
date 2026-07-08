@@ -3,3 +3,7 @@ build/
 *.cf
 *.o
 work-obj*.cf
+
+# generated Makefile.mk fragments (recreated by 'make scan');
+# .compile_order files are intentionally tracked
+**/Makefile.mk
