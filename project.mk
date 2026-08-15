@@ -77,9 +77,12 @@ VSIM_FLAGS :=
 
 # ── Xilinx Vivado settings ────────────────────────────────────────────────────
 VIVADO      := vivado
-VIVADO_PART := xc7a35tcpg236-1   # Target device part number
-VIVADO_TOP  := top                # Top-level design unit
-VIVADO_XDC  :=                    # Constraints file(s), space-separated
+# Target device part number
+VIVADO_PART := xc7a35tcpg236-1
+# Top-level design unit
+VIVADO_TOP  := top
+# Constraints file(s), space-separated
+VIVADO_XDC  :=
 
 # ── Intel/Altera Quartus Prime settings ───────────────────────────────────────
 QUARTUS_SH   := quartus_sh
@@ -87,6 +90,8 @@ QUARTUS_MAP  := quartus_map
 QUARTUS_FIT  := quartus_fit
 QUARTUS_ASM  := quartus_asm
 QUARTUS_STA  := quartus_sta
-QUARTUS_PART := EP4CE6E22C8       # Target device
-QUARTUS_TOP  := top               # Top-level entity
+# Target device
+QUARTUS_PART := EP4CE6E22C8
+# Top-level entity
+QUARTUS_TOP  := top
 QUARTUS_FAMILY := "Cyclone IV E"
