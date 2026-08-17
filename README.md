@@ -180,3 +180,34 @@ tb/tb_cdc_lib.vhd       self-checking testbench
 ```
 
 Compile order: `cdc_pkg` → `cdc_sync_bit` → `dpram` → remaining files.
+
+## Before you ship this
+
+These are reference implementations, not qualified IP. A clock-domain crossing
+is the class of bug that passes simulation, passes on the bench, and fails in
+the field months later at a temperature corner nobody tested — so treat what is
+here as a correct *pattern*, not as a drop-in guarantee:
+
+- **Constrain it.** The synchroniser chains need the false paths and
+  `set_max_delay` shown under *Timing constraints*. Without them the tools are
+  free to optimise across the crossing, and nothing in simulation will tell you.
+- **Check the MTBF for your clocks.** Two flops is the usual answer, not the
+  universal one. High ratios, high frequencies, or a safety-critical function
+  may need three.
+- **Re-verify after any edit.** `make` runs the self-checking testbench; a
+  synchroniser modified without re-running it is unverified, however small the
+  change looked.
+- **Safety-critical use is on you.** The MIT licence disclaims all warranty in
+  plain terms, and that disclaimer is meant literally here.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE). Copy a primitive straight into your own RTL if
+that is easiest; that is what this library is for.
+
+`mk/` is a git submodule ([makefile_project_template](https://github.com/Pcsf/makefile_project_template),
+Apache-2.0) used only to build and simulate. It is a pointer, not a copy: no
+framework file is distributed by this repository, none of it ends up in the
+VHDL, and a release archive of this repo contains none of it. Clone with
+`--recurse-submodules` if you want to run the testbench; each repository keeps
+its own licence.
