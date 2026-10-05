@@ -64,6 +64,9 @@ GHDL_FLAGS :=
 GHDL_TOP   := tb_cdc_lib
 # Extra flags passed to the simulation step
 GHDL_SIM_FLAGS :=
+# The testbench prints this only after every check has run, so a run that stops
+# early fails `make test` instead of passing it.
+TEST_PASS_PATTERN := ALL TESTS PASSED
 
 # ── ModelSim / QuestaSim settings ─────────────────────────────────────────────
 VLIB      := vlib

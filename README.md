@@ -148,6 +148,7 @@ Self-checking testbench covering all components with two unrelated clocks:
 ```sh
 git submodule update --init   # once, after cloning
 make            # scan (first run), analyze, elaborate, simulate; VCD in build/
+make test       # same run, exit status is the verdict: fails on any check or an early stop
 ```
 
 The build system is the [makefile_project_template](https://github.com/Pcsf/makefile_project_template)
