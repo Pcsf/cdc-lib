@@ -1,3 +1,5 @@
 [submodule "makefile_project_template"]
 	path = mk
 	url = git@github.com:Pcsf/makefile_project_template.git
+[submodule "mk"]
+	url = ../makefile_project_template.git
