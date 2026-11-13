@@ -7,4 +7,5 @@
 # Lines starting with # and blank lines are ignored.
 #
 # Current files (alphabetical — reorder as needed):
+tb_cdc_sync_level.vhd
 tb_cdc_lib.vhd

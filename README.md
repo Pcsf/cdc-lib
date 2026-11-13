@@ -10,6 +10,7 @@ for Xilinx (Vivado) and Intel/Altera (Quartus).
 |------------------|-----------------------------------------------------------------|
 | `cdc_sync_bit`   | Single-bit level signal (N-flop synchronizer, default 2)        |
 | `cdc_sync_pulse` | Single-cycle pulse, active high or active low (toggle scheme)   |
+| `cdc_sync_level` | Single-bit level or pulse of any width, any clock ratio (output follows the input) |
 | `cdc_handshake`  | Multi-bit data, low rate (req/ack toggle handshake)             |
 | `cdc_async_fifo` | Multi-bit data, streaming (gray-coded pointer dual-clock FIFO)  |
 | `cdc_pingpong`   | Multi-bit data, random-access blocks (double-bank buffer)       |
@@ -33,6 +34,24 @@ All component declarations plus `bin2gray`/`gray2bin` helper functions are in
 - Every accepted source pulse produces exactly one destination pulse.
 - `busy` (source domain, active high) covers the full round trip; pulses
   arriving while `busy = '1'` are **ignored** — check `busy` before pulsing.
+
+### cdc_sync_level
+- `pulse_dst` follows `pulse_src`: it stays at `G_ACTIVE_LEVEL` for as long as
+  the input does and idles at the opposite level. Use it instead of
+  `cdc_sync_bit` when the input can be shorter than a destination clock
+  period, and instead of `cdc_sync_pulse` when the width matters.
+- The level crosses with an acknowledge back to the source, so no input pulse
+  is lost at any clock ratio. One round trip is about `G_STAGES + 2` `clk_dst`
+  cycles plus `G_STAGES + 1` `clk_src` cycles.
+- A pulse longer than the round trip keeps its width to within one `clk_dst`
+  cycle. A shorter pulse is stretched to about the round trip.
+- An idle gap shorter than the round trip is widened: the next pulse starts
+  late. One such pulse is remembered; a further pulse arriving before the
+  remembered one has started merges into it and raises `drop` (source domain,
+  active high) for one `clk_src` cycle. `busy` is high while a level change
+  is in flight.
+- The resets are independent here: `rst_src` makes the input read as idle,
+  `rst_dst` forces `pulse_dst` idle, and neither disturbs the crossing.
 
 ### cdc_handshake
 - Source: word accepted when `valid_src = '1'` and `ready_src = '1'` on a
@@ -114,7 +133,8 @@ u_fifo : entity cdc_lib.cdc_async_fifo generic map (...) port map (...);
 ### Resets
 All resets are synchronous, active high, and per-domain. Components with two
 domains assume both resets assert/release together (overlapping reset); do not
-operate one side while the other is still in reset.
+operate one side while the other is still in reset. `cdc_sync_level` is the
+exception: its two resets are independent.
 
 ## Timing constraints
 
@@ -143,7 +163,9 @@ Quartus (SDC) equivalent: `set_clock_groups -asynchronous ...` or
 
 ## Simulation
 
-Self-checking testbench covering all components with two unrelated clocks:
+Self-checking testbench covering all components with two unrelated clocks;
+`cdc_sync_level` runs in its own bench (`tb_cdc_sync_level`, instantiated by
+`tb_cdc_lib`) for both polarities at three clock ratios:
 
 ```sh
 git submodule update --init   # once, after cloning
@@ -160,7 +182,7 @@ Compilation order lives in `src/.compile_order` and `tb/.compile_order`;
 
 ```sh
 mkdir -p build
-ghdl -a --std=93 --workdir=build src/*.vhd tb/tb_cdc_lib.vhd
+ghdl -a --std=93 --workdir=build src/*.vhd tb/tb_cdc_sync_level.vhd tb/tb_cdc_lib.vhd
 ghdl -e --std=93 --workdir=build tb_cdc_lib
 ghdl -r --std=93 --workdir=build tb_cdc_lib
 ```
@@ -173,10 +195,12 @@ Expected output ends with `ALL TESTS PASSED`.
 src/cdc_pkg.vhd         package: components + gray-code functions
 src/cdc_sync_bit.vhd    N-flop single-bit synchronizer
 src/cdc_sync_pulse.vhd  pulse synchronizer (active high/low)
+src/cdc_sync_level.vhd  level synchronizer, no pulse lost (active high/low)
 src/cdc_handshake.vhd   multi-bit req/ack handshake
 src/dpram.vhd           dual-clock simple dual-port RAM
 src/cdc_async_fifo.vhd  gray-pointer asynchronous FIFO
 src/cdc_pingpong.vhd    double-bank (ping-pong) block buffer
+tb/tb_cdc_sync_level.vhd  bench for cdc_sync_level (one polarity, one clock pair)
 tb/tb_cdc_lib.vhd       self-checking testbench
 ```
 

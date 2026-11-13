@@ -52,6 +52,27 @@ package cdc_pkg is
   end component;
 
   ------------------------------------------------------------------------------
+  -- Level synchronizer that loses no pulse at any clock ratio, active level
+  -- selectable
+  ------------------------------------------------------------------------------
+  component cdc_sync_level is
+    generic (
+      G_STAGES       : positive  := 2;
+      G_ACTIVE_LEVEL : std_logic := '1'
+    );
+    port (
+      clk_src   : in  std_logic;
+      rst_src   : in  std_logic;
+      pulse_src : in  std_logic;
+      busy      : out std_logic;
+      drop      : out std_logic;
+      clk_dst   : in  std_logic;
+      rst_dst   : in  std_logic;
+      pulse_dst : out std_logic
+    );
+  end component;
+
+  ------------------------------------------------------------------------------
   -- Multi-bit data crossing with req/ack (toggle) handshake
   ------------------------------------------------------------------------------
   component cdc_handshake is

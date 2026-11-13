@@ -12,6 +12,9 @@
 --   T5: dpram            - 16 locations written on port A, read on port B
 --   T6: cdc_pingpong     - 3 banks written/committed, read/released; checks
 --                          wr_ready = '0' while both banks are outstanding
+--   T7: cdc_sync_level   - tb_cdc_sync_level for both polarities at three
+--                          clock ratios (src 18x faster, dst 18x faster,
+--                          near-equal), each with its own clocks
 --
 -- Any mismatch stops the simulation with severity failure; on success the
 -- simulation prints "ALL TESTS PASSED" and ends.
@@ -70,10 +73,28 @@ architecture sim of tb_cdc_lib is
   signal pp_wr_data, pp_rd_data   : std_logic_vector(7 downto 0) := (others => '0');
   signal pp_start, pp_done        : boolean := false;
 
+  -- T7: level sync, one bench per polarity and clock ratio
+  type t_periods is array (0 to 2) of positive;
+  constant C_LV_T_SRC_PS : t_periods := (2000, 37000, 10000);
+  constant C_LV_T_DST_PS : t_periods := (37000, 2000, 10300);
+  type t_bools is array (0 to 5) of boolean;
+  signal lv_done : t_bools;
+
 begin
 
   clk_a <= not clk_a after 5.0 ns when not sim_done else '0';
   clk_b <= not clk_b after 3.7 ns when not sim_done else '0';
+
+  g_level : for i in 0 to 2 generate
+    u_hi : entity work.tb_cdc_sync_level
+      generic map (G_ACTIVE_LEVEL => '1',
+                   G_T_SRC_PS => C_LV_T_SRC_PS(i), G_T_DST_PS => C_LV_T_DST_PS(i))
+      port map (done => lv_done(2 * i));
+    u_lo : entity work.tb_cdc_sync_level
+      generic map (G_ACTIVE_LEVEL => '0',
+                   G_T_SRC_PS => C_LV_T_SRC_PS(i), G_T_DST_PS => C_LV_T_DST_PS(i))
+      port map (done => lv_done(2 * i + 1));
+  end generate;
 
   ------------------------------------------------------------------------------
   -- devices under test
@@ -346,6 +367,13 @@ begin
     end loop;
     wait until pp_done;
     report "T6 cdc_pingpong PASS";
+
+    for i in lv_done'range loop
+      if not lv_done(i) then
+        wait until lv_done(i);
+      end if;
+    end loop;
+    report "T7 cdc_sync_level PASS";
 
     report "ALL TESTS PASSED";
     sim_done <= true;

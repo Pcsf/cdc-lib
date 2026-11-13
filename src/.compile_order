@@ -10,6 +10,7 @@
 cdc_pkg.vhd
 cdc_sync_bit.vhd
 cdc_sync_pulse.vhd
+cdc_sync_level.vhd
 cdc_handshake.vhd
 dpram.vhd
 cdc_async_fifo.vhd
