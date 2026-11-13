@@ -50,8 +50,10 @@ All component declarations plus `bin2gray`/`gray2bin` helper functions are in
   remembered one has started merges into it and raises `drop` (source domain,
   active high) for one `clk_src` cycle. `busy` is high while a level change
   is in flight.
-- The resets are independent here: `rst_src` makes the input read as idle,
-  `rst_dst` forces `pulse_dst` idle, and neither disturbs the crossing.
+- `rst_src` makes the input read as idle, so the output stays idle while the
+  logic driving an active-low input is in reset. There is no destination
+  reset: the crossing starts from its power-up values and recovers by itself
+  from any state.
 
 ### cdc_handshake
 - Source: word accepted when `valid_src = '1'` and `ready_src = '1'` on a
@@ -134,7 +136,7 @@ u_fifo : entity cdc_lib.cdc_async_fifo generic map (...) port map (...);
 All resets are synchronous, active high, and per-domain. Components with two
 domains assume both resets assert/release together (overlapping reset); do not
 operate one side while the other is still in reset. `cdc_sync_level` is the
-exception: its two resets are independent.
+exception: it has a source reset only.
 
 ## Timing constraints
 

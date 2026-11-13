@@ -23,8 +23,10 @@
 --
 -- busy = '1' while a level change is in flight.
 --
--- Resets are independent. rst_src makes the input read as idle; rst_dst
--- forces pulse_dst idle. Neither disturbs the handshake.
+-- rst_src makes the input read as idle, which keeps the output idle while
+-- the logic driving an active-low input is still in reset. There is no
+-- destination reset: the crossing starts from its power-up values and
+-- recovers by itself from any state.
 -- Relies on power-up initial values: FPGA targets, not ASIC.
 --------------------------------------------------------------------------------
 library ieee;
@@ -44,7 +46,6 @@ entity cdc_sync_level is
     drop      : out std_logic;   -- active high, one clk_src cycle
     -- destination domain
     clk_dst   : in  std_logic;
-    rst_dst   : in  std_logic;   -- synchronous, active high
     pulse_dst : out std_logic
   );
 end entity cdc_sync_level;
@@ -101,7 +102,7 @@ begin
     end if;
   end process;
 
-  -- The synchronizer resets stay inactive so a reset cannot fake a level.
+  -- The synchronizer cells are used without their reset.
   u_hold_sync : entity work.cdc_sync_bit
     generic map (G_STAGES => G_STAGES, G_RESET_VAL => '0')
     port map (clk_dst => clk_dst, rst_dst => '0', din => hold, dout => hold_s);
@@ -110,7 +111,7 @@ begin
   begin
     if rising_edge(clk_dst) then
       hold_q <= hold_s;
-      if hold_s = '1' and rst_dst = '0' then
+      if hold_s = '1' then
         pulse_r <= G_ACTIVE_LEVEL;
       else
         pulse_r <= C_IDLE;

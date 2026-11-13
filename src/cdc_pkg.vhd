@@ -67,7 +67,6 @@ package cdc_pkg is
       busy      : out std_logic;
       drop      : out std_logic;
       clk_dst   : in  std_logic;
-      rst_dst   : in  std_logic;
       pulse_dst : out std_logic
     );
   end component;

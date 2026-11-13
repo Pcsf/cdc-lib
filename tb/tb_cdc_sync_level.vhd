@@ -34,7 +34,7 @@ architecture sim of tb_cdc_sync_level is
   constant C_WIDTHS : t_ints := (1, 2, 3, 4, 6, 9, 14, 20, 35, 60, 100, 160, 300);
 
   signal clk_src, clk_dst : std_logic := '0';
-  signal rst_src, rst_dst : std_logic := '1';
+  signal rst_src          : std_logic := '1';
   signal pulse_src        : std_logic := C_IDLE;
   signal busy, drop       : std_logic;
   signal pulse_dst        : std_logic;
@@ -57,7 +57,7 @@ begin
     port map (
       clk_src => clk_src, rst_src => rst_src, pulse_src => pulse_src,
       busy => busy, drop => drop,
-      clk_dst => clk_dst, rst_dst => rst_dst, pulse_dst => pulse_dst);
+      clk_dst => clk_dst, pulse_dst => pulse_dst);
 
   -- Count output pulses and record how long each one stayed active.
   p_mon_dst : process (clk_dst)
@@ -140,7 +140,6 @@ begin
     tick_src(4);
     tick_dst(4);
     rst_src <= '0';
-    rst_dst <= '0';
 
     -- 1. Idle input after reset: no output pulse.
     settle;
@@ -183,20 +182,16 @@ begin
           "burst: sent " & integer'image(n_sent) & ", received " &
           integer'image(n_dst) & ", dropped " & integer'image(n_drop));
 
-    -- 4. Resetting one side alone, input idle: no output pulse, and the
-    --    link still works afterwards.
+    -- 4. Reset with the input idle: no output pulse, and the link still
+    --    works afterwards.
     rst_src <= '1';
     tick_src(5);
     rst_src <= '0';
     settle;
-    rst_dst <= '1';
-    tick_dst(5);
-    rst_dst <= '0';
-    settle;
-    check(n_dst + n_drop = n_sent, "pulse from a one-sided reset");
+    check(n_dst + n_drop = n_sent, "pulse from a reset");
     send(3);
     settle;
-    check(n_dst + n_drop = n_sent, "link dead after one-sided reset");
+    check(n_dst + n_drop = n_sent, "link dead after reset");
 
     -- 5. An input already active when rst_src releases is one pulse.
     --    While rst_src is held the output stays idle.
@@ -213,18 +208,21 @@ begin
     settle;
     check(n_dst + n_drop = n_sent, "input active across reset release lost");
 
-    -- 6. Input held active: the output stays active, goes idle while
-    --    rst_dst is asserted, and comes back when it releases.
+    -- 6. Input held active: the output goes idle while rst_src is
+    --    asserted and comes back when it releases.
     pulse_src <= C_ACT;
     tick_src(8);
     tick_dst(12);
     check(pulse_dst = C_ACT, "output not active while the input is held");
-    rst_dst <= '1';
-    tick_dst(3);
-    check(pulse_dst = C_IDLE, "output active while rst_dst is asserted");
-    rst_dst <= '0';
-    tick_dst(3);
-    check(pulse_dst = C_ACT, "output did not return after rst_dst");
+    rst_src <= '1';
+    tick_src(8);
+    tick_dst(12);
+    check(pulse_dst = C_IDLE, "output active while rst_src is asserted");
+    tick_src;
+    rst_src <= '0';
+    tick_src(8);
+    tick_dst(12);
+    check(pulse_dst = C_ACT, "output did not return after rst_src");
     tick_src;
     pulse_src <= C_IDLE;
     n_sent := n_sent + 2;   -- one input pulse, split in two by the reset
